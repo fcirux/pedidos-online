@@ -1,4 +1,15 @@
-<!DOCTYPE html>
+                                                    <div className="flex items-center gap-3 bg-orange-50 rounded-xl p-1">
+                                                        <button
+                                                            onClick={() => modificarCantidad(item.id, -1)}
+                                                            className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-orange-600 font-bold hover:bg-orange-100 transition-colors"
+                                                        >
+                                                            <IconMinus />
+                        <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 LA MILANESA - Pedidos Online</title><!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -22,22 +33,50 @@
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
 
-        // ⚙️ CONFIGURACIÓN - PERSONALIZÁ AQUÍ TU MENÚ Y NÚMERO DE WHATSAPP
+        // ⚙️ CONFIGURACIÓN - PERSONALIZÁ AQUÍ
         const CONFIG = {
             // 📱 IMPORTANTE: Reemplazá con tu número de WhatsApp (código de país + número sin espacios ni guiones)
             // Ejemplo: Argentina (549) + área (11) + número (12345678) = 5491112345678
             numeroWhatsApp: '+5493546525687',
             
+            // ☎️ Teléfono para llamadas directas (opcional - con espacios se ve mejor)
+            telefonoLlamada: '11 5555-4321',
+            
             // 🏪 Nombre de tu local
             nombreLocal: '🔥 LA MILANESA',
+            
+            // 🕒 Horarios de atención (formato 24hs)
+            horarios: {
+                lunes: { abierto: true, horarios: '19:00-23:00' },
+                martes: { abierto: true, horarios: '19:00-23:00' },
+                miercoles: { abierto: true, horarios: '19:00-23:00' },
+                jueves: { abierto: true, horarios: '19:00-23:00' },
+                viernes: { abierto: true, horarios: '19:00-00:00' },
+                sabado: { abierto: true, horarios: '11:00-00:00' },
+                domingo: { abierto: false, horarios: 'Cerrado' },
+            },
+            
+            // 📱 Redes sociales (dejá en blanco '' las que no uses)
+            redesSociales: {
+                instagram: 'https://instagram.com/tulocal',  // Ejemplo: https://instagram.com/lamilanesa
+                facebook: 'https://facebook.com/tulocal',     // Ejemplo: https://facebook.com/lamilanesa
+                tiktok: '',                                     // Opcional
+            },
         };
 
         // 🍔 MENÚ - Agregá, modificá o eliminá productos según tu carta
@@ -82,7 +121,7 @@
             postres: { nombre: 'Postres', emoji: '🍰' },
         };
 
-        // Componentes de íconos simples con SVG
+        // Componentes de íconos
         const IconCarrito = ({ size = 24, className = "" }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
@@ -132,6 +171,24 @@
             </svg>
         );
 
+        const IconPhone = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+        );
+
+        const IconInstagram = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+        );
+
+        const IconFacebook = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+        );
+
         function AppPedidos() {
             const [carrito, setCarrito] = useState([]);
             const [categoriaActiva, setCategoriaActiva] = useState('sandwiches');
@@ -145,21 +202,47 @@
             });
             const [ubicacion, setUbicacion] = useState(null);
             const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
+            const [metodoPago, setMetodoPago] = useState('efectivo');
+            const [pagarCon, setPagarCon] = useState('');
+            const [modalProducto, setModalProducto] = useState(null);
+            const [instruccionesEspeciales, setInstruccionesEspeciales] = useState('');
+            const [estaAbierto, setEstaAbierto] = useState(true);
+
+            // Verificar horarios
+            useEffect(() => {
+                const verificarHorario = () => {
+                    const ahora = new Date();
+                    const diaSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'][ahora.getDay()];
+                    const horarioHoy = CONFIG.horarios[diaSemana];
+                    setEstaAbierto(horarioHoy.abierto);
+                };
+                verificarHorario();
+                const interval = setInterval(verificarHorario, 60000); // Verificar cada minuto
+                return () => clearInterval(interval);
+            }, []);
 
             const agregarAlCarrito = (producto) => {
-                const existe = carrito.find(item => item.id === producto.id);
-                if (existe) {
-                    setCarrito(carrito.map(item =>
-                        item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
-                    ));
-                } else {
-                    setCarrito([...carrito, { ...producto, cantidad: 1 }]);
-                }
+                setModalProducto(producto);
             };
 
-            const modificarCantidad = (id, delta) => {
+            const confirmarAgregarAlCarrito = () => {
+                const existe = carrito.find(item => item.id === modalProducto.id && item.instrucciones === instruccionesEspeciales);
+                if (existe) {
+                    setCarrito(carrito.map(item =>
+                        (item.id === modalProducto.id && item.instrucciones === instruccionesEspeciales)
+                            ? { ...item, cantidad: item.cantidad + 1 }
+                            : item
+                    ));
+                } else {
+                    setCarrito([...carrito, { ...modalProducto, cantidad: 1, instrucciones: instruccionesEspeciales }]);
+                }
+                setModalProducto(null);
+                setInstruccionesEspeciales('');
+            };
+
+            const modificarCantidad = (id, instrucciones, delta) => {
                 setCarrito(carrito.map(item => {
-                    if (item.id === id) {
+                    if (item.id === id && item.instrucciones === instrucciones) {
                         const nuevaCantidad = item.cantidad + delta;
                         return nuevaCantidad > 0 ? { ...item, cantidad: nuevaCantidad } : null;
                     }
@@ -167,8 +250,8 @@
                 }).filter(Boolean));
             };
 
-            const eliminarDelCarrito = (id) => {
-                setCarrito(carrito.filter(item => item.id !== id));
+            const eliminarDelCarrito = (id, instrucciones) => {
+                setCarrito(carrito.filter(item => !(item.id === id && item.instrucciones === instrucciones)));
             };
 
             const calcularTotal = () => {
@@ -194,7 +277,6 @@
                     (error) => {
                         setCargandoUbicacion(false);
                         alert('No se pudo obtener tu ubicación. Asegurate de dar permisos al navegador.');
-                        console.error('Error de geolocalización:', error);
                     }
                 );
             };
@@ -210,17 +292,23 @@
                 if (delivery && ubicacion) {
                     mensaje += `🗺️ *Ubicación:* https://www.google.com/maps?q=${ubicacion.lat},${ubicacion.lng}\n`;
                 }
+                mensaje += `\n💳 *Forma de pago:* ${metodoPago === 'efectivo' ? 'Efectivo' : metodoPago === 'transferencia' ? 'Transferencia' : 'Débito/Crédito'}\n`;
+                if (metodoPago === 'efectivo' && pagarCon) {
+                    const vuelto = parseInt(pagarCon) - calcularTotal();
+                    mensaje += `💵 *Paga con:* $${parseInt(pagarCon).toLocaleString('es-AR')} (Vuelto: $${vuelto.toLocaleString('es-AR')})\n`;
+                }
                 mensaje += `\n*ITEMS:*\n`;
                 
                 carrito.forEach(item => {
                     mensaje += `\n• ${item.cantidad}x ${item.name} - $${(item.price * item.cantidad).toLocaleString('es-AR')}\n`;
                     if (item.desc) mensaje += `  _${item.desc}_\n`;
+                    if (item.instrucciones) mensaje += `  📝 ${item.instrucciones}\n`;
                 });
                 
                 mensaje += `\n💰 *TOTAL: $${calcularTotal().toLocaleString('es-AR')}*`;
                 
                 if (datosCliente.notas) {
-                    mensaje += `\n\n📝 *Notas:* ${datosCliente.notas}`;
+                    mensaje += `\n\n📝 *Notas adicionales:* ${datosCliente.notas}`;
                 }
                 
                 return encodeURIComponent(mensaje);
@@ -239,15 +327,36 @@
                     alert('Tu carrito está vacío');
                     return;
                 }
+                if (metodoPago === 'efectivo' && pagarCon && parseInt(pagarCon) < calcularTotal()) {
+                    alert('El monto con el que pagás debe ser mayor o igual al total');
+                    return;
+                }
                 
                 const mensaje = generarMensajeWhatsApp();
                 window.open(`https://wa.me/${CONFIG.numeroWhatsApp}?text=${mensaje}`, '_blank');
+            };
+
+            const llamarDirecto = () => {
+                window.location.href = `tel:${CONFIG.telefonoLlamada.replace(/\s/g, '')}`;
             };
 
             const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
 
             return (
                 <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
+                    {/* Banner de horarios */}
+                    {!estaAbierto && (
+                        <div className="bg-red-600 text-white py-2 px-4 text-center font-bold">
+                            🔴 CERRADO - Abrimos: {CONFIG.horarios[['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'][new Date().getDay()]].horarios}
+                        </div>
+                    )}
+                    {estaAbierto && (
+                        <div className="bg-green-600 text-white py-2 px-4 text-center font-bold flex items-center justify-center gap-2">
+                            <span className="w-2 h-2 bg-white rounded-full pulse-animation"></span>
+                            ABIERTO - {CONFIG.horarios[['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'][new Date().getDay()]].horarios}
+                        </div>
+                    )}
+
                     {/* Header */}
                     <header className="sticky top-0 z-40 bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-xl">
                         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -256,17 +365,28 @@
                                     <h1 className="text-2xl font-black tracking-tight">{CONFIG.nombreLocal}</h1>
                                     <p className="text-xs text-orange-100 font-medium">Hacé tu pedido online</p>
                                 </div>
-                                <button
-                                    onClick={() => setMostrarCarrito(!mostrarCarrito)}
-                                    className="relative bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-2xl transition-all active:scale-95"
-                                >
-                                    <IconCarrito />
-                                    {totalItems > 0 && (
-                                        <span className="absolute -top-2 -right-2 bg-yellow-400 text-orange-900 text-xs font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
-                                            {totalItems}
-                                        </span>
-                                    )}
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    {/* Botón de llamada */}
+                                    <button
+                                        onClick={llamarDirecto}
+                                        className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-2xl transition-all active:scale-95"
+                                        title="Llamar ahora"
+                                    >
+                                        <IconPhone />
+                                    </button>
+                                    {/* Botón de carrito */}
+                                    <button
+                                        onClick={() => setMostrarCarrito(!mostrarCarrito)}
+                                        className="relative bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-2xl transition-all active:scale-95"
+                                    >
+                                        <IconCarrito />
+                                        {totalItems > 0 && (
+                                            <span className="absolute -top-2 -right-2 bg-yellow-400 text-orange-900 text-xs font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
+                                                {totalItems}
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </header>
@@ -291,6 +411,43 @@
                             </div>
                         </div>
                     </div>
+
+                    {/* Modal de instrucciones especiales */}
+                    {modalProducto && (
+                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setModalProducto(null)}>
+                            <div className="bg-white rounded-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+                                <h3 className="text-xl font-black text-orange-900 mb-2">{modalProducto.name}</h3>
+                                <p className="text-sm text-gray-600 mb-4">{modalProducto.desc}</p>
+                                <p className="text-2xl font-black text-orange-600 mb-4">${modalProducto.price.toLocaleString('es-AR')}</p>
+                                
+                                <label className="block text-sm font-bold text-orange-900 mb-2">
+                                    Instrucciones especiales (opcional):
+                                </label>
+                                <textarea
+                                    value={instruccionesEspeciales}
+                                    onChange={(e) => setInstruccionesEspeciales(e.target.value)}
+                                    placeholder="Ej: Sin cebolla, bien cocido, etc."
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none font-medium resize-none mb-4"
+                                    rows={3}
+                                />
+                                
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setModalProducto(null)}
+                                        className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-300 font-bold text-gray-700 hover:bg-gray-50"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={confirmarAgregarAlCarrito}
+                                        className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 rounded-xl font-bold hover:from-orange-600 hover:to-red-600"
+                                    >
+                                        Agregar al carrito
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Menú Principal */}
                     <main className="max-w-6xl mx-auto px-4 py-6">
@@ -354,15 +511,18 @@
                                 <div className="space-y-6">
                                     {/* Items del carrito */}
                                     <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                                        {carrito.map(item => (
-                                            <div key={item.id} className="border-b border-orange-100 last:border-0 p-4">
+                                        {carrito.map((item, index) => (
+                                            <div key={`${item.id}-${index}`} className="border-b border-orange-100 last:border-0 p-4">
                                                 <div className="flex items-start justify-between mb-3">
                                                     <div className="flex-1">
                                                         <h3 className="font-bold text-orange-900">{item.name}</h3>
                                                         <p className="text-xs text-gray-500">{item.desc}</p>
+                                                        {item.instrucciones && (
+                                                            <p className="text-xs text-blue-600 font-medium mt-1">📝 {item.instrucciones}</p>
+                                                        )}
                                                     </div>
                                                     <button
-                                                        onClick={() => eliminarDelCarrito(item.id)}
+                                                        onClick={() => eliminarDelCarrito(item.id, item.instrucciones)}
                                                         className="text-red-500 hover:text-red-700 p-1"
                                                     >
                                                         <IconTrash />
@@ -372,11 +532,981 @@
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3 bg-orange-50 rounded-xl p-1">
                                                         <button
-                                                            onClick={() => modificarCantidad(item.id, -1)}
+                                                            onClick={() => modificarCantidad(item.id, item.instrucciones, -1)}
                                                             className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-orange-600 font-bold hover:bg-orange-100 transition-colors"
                                                         >
                                                             <IconMinus />
                                                         </button>
+                                                        <span className="font-black text-orange-900 w-8 text-center">
+                                                            {item.cantidad}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => modificarCantidad(item.id, item.instrucciones, 1)}
+                                                            className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-orange-600 font-bold hover:bg-orange-100 transition-colors"
+                                                        >
+                                                            <IconPlus size={16} />
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <span className="text-lg font-black text-orange-600">
+                                                        ${(item.price * item.cantidad).toLocaleString('es-AR')}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Tipo de entrega */}
+                                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                                        <h3 className="font-black text-orange-900 mb-4">Forma de entrega</h3>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                onClick={() => setDelivery(true)}
+                                                className={`p-4 rounded-xl border-2 font-bold transition-all ${
+                                                    delivery
+                                                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                                        : 'border-gray-200 text-gray-600 hover:border-orange-300'
+                                                }`}
+                                            >
+                                                <div className="flex justify-center mb-2"><IconMapPin /></div>
+                                                Delivery
+                                            </button>
+                                            <button
+                                                onClick={() => setDelivery(false)}
+                                                className={`p-4 rounded-xl border-2 font-bold transition-all ${
+                                                    !delivery
+                                                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                                        : 'border-gray-200 text-gray-600 hover:border-orange-300'
+                                                }`}
+                                            >
+                                                <div className="flex justify-center mb-2"><IconPackage /></div>
+                                                Retiro
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Datos del cliente */}
+                                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                                        <h3 className="font-black text-orange-900 mb-4">Tus datos</h3>
+                                        <div className="space-y-3">
+                                            <input
+                                                type="text"
+                                                placeholder="Tu nombre *"
+                                                value={datosCliente.nombre}
+                                                onChange={(e) => setDatosCliente({...datosCliente, nombre: e.target.value})}
+                                                className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none font-medium"
+                                            />
+                                            <input
+                                                type="tel"
+                                                placeholder="Tu teléfono *"
+                                                value={datosCliente.telefono}
+                                                onChange={(e) => setDatosCliente({...datosCliente, telefono: e.target.value})}
+                                                className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none font-medium"
+                                            />
+                                            {delivery && (
+                                                <>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Tu dirección *"
+                                                        value={datosCliente.direccion}
+                                                        onChange={(e) => setDatosCliente({...datosCliente, direccion: e.target.value})}
+                                                        className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none font-medium"
+                                                    />
+                                                    <button
+                                                        onClick={obtenerUbicacion}
+                                                        disabled={cargandoUbicacion}
+                                                        className={`w-full px-4 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${
+                                                            ubicacion 
+                                                                ? 'border-green-500 bg-green-50 text-green-700' 
+                                                                : 'border-orange-500 bg-orange-50 text-orange-700 hover:bg-orange-100'
+                                                        } ${cargandoUbicacion ? 'opacity-50 cursor-wait' : ''}`}
+                                                    >
+                                                        <IconGPS />
+                                                        {cargandoUbicacion ? 'Obteniendo ubicación...' : ubicacion ? '✓ Ubicación compartida' : 'Compartir mi ubicación'}
+                                                    </button>
+                                                    {ubicacion && (
+                                                        <p className="text-xs text-green-600 font-medium text-center">
+                                                            Tu ubicación se enviará en el pedido para facilitar la entrega
+                                                        </p>
+                                                    )}
+                                                </>
+                                            )}
+                                            <textarea
+                                                placeholder="Notas adicionales (opcional)"
+                                                value={datosCliente.notas}
+                                                onChange={(e) => setDatosCliente({...datosCliente, notas: e.target.value})}
+                                                className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none font-medium resize-none"
+                                                rows={3}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Método de pago */}
+                                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                                        <h3 className="font-black text-orange-900 mb-4">Método de pago</h3>
+                                        <div className="space-y-3">
+                                            <button
+                                                onClick={() => setMetodoPago('efectivo')}
+                                                className={`w-full p-4 rounded-xl border-2 font-bold text-left transition-all ${
+                                                    metodoPago === 'efectivo'
+                                                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                                        : 'border-gray-200 text-gray-600 hover:border-orange-300'
+                                                }`}
+                                            >
+                                                💵 Efectivo
+                                            </button>
+                                            {metodoPago === 'efectivo' && (
+                                                <input
+                                                    type="number"
+                                                    placeholder="¿Con cuánto pagás? (opcional)"
+                                                    value={pagarCon}
+                                                    onChange={(e) => setPagarCon(e.target.value)}
+                                                    className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none font-medium"
+                                                />
+                                            )}
+                                            <button
+                                                onClick={() => setMetodoPago('transferencia')}
+                                                className={`w-full p-4 rounded-xl border-2 font-bold text-left transition-all ${
+                                                    metodoPago === 'transferencia'
+                                                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                                        : 'border-gray-200 text-gray-600 hover:border-orange-300'
+                                                }`}
+                                            >
+                                                🏦 Transferencia
+                                            </button>
+                                            <button
+                                                onClick={() => setMetodoPago('tarjeta')}
+                                                className={`w-full p-4 rounded-xl border-2 font-bold text-left transition-all ${
+                                                    metodoPago === 'tarjeta'
+                                                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                                        : 'border-gray-200 text-gray-600 hover:border-orange-300'
+                                                }`}
+                                            >
+                                                💳 Débito / Crédito
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Total y enviar */}
+                                    <div className="bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl shadow-2xl p-6 text-white">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <span className="text-xl font-bold">TOTAL</span>
+                                            <span className="text-4xl font-black">
+                                                ${calcularTotal().toLocaleString('es-AR')}
+                                            </span>
+                                        </div>
+                                        
+                                        <button
+                                            onClick={enviarPedido}
+                                            className="w-full bg-white text-orange-600 py-4 rounded-xl font-black text-lg flex items-center justify-center gap-3 hover:bg-orange-50 transition-all shadow-lg"
+                                        >
+                                            <IconSend />
+                                            ENVIAR PEDIDO POR WHATSAPP
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    {/* Footer con redes sociales */}
+                    <footer className="mt-12 py-8 bg-white border-t border-orange-200">
+                        <div className="max-w-6xl mx-auto px-4 text-center">
+                            <p className="font-bold text-orange-900 mb-4">{CONFIG.nombreLocal}</p>
+                            
+                            {/* Redes sociales */}
+                            <div className="flex justify-center gap-4 mb-4">
+                                {CONFIG.redesSociales.instagram && (
+                                    <a 
+                                        href={CONFIG.redesSociales.instagram}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                                    >
+                                        <IconInstagram />
+                                    </a>
+                                )}
+                                {CONFIG.redesSociales.facebook && (
+                                    <a 
+                                        href={CONFIG.redesSociales.facebook}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                                    >
+                                        <IconFacebook />
+                                    </a>
+                                )}
+                            </div>
+                            
+                            {/* Horarios */}
+                            <div className="text-sm text-gray-600">
+                                <p className="font-bold mb-2">Horarios de atención:</p>
+                                {Object.entries(CONFIG.horarios).map(([dia, info]) => (
+                                    <p key={dia} className="text-xs">
+                                        <span className="capitalize font-medium">{dia}</span>: {info.horarios}
+                                    </p>
+                                ))}
+                            </div>
+                            
+                            <p className="text-xs text-gray-400 mt-4">Pedidos Online</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AppPedidos />);
+    </script>
+</body>
+</html>
+
+    <meta name="description" content="Hacé tu pedido de milanesas, lomitos y empanadas online">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React y ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel para JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // ⚙️ CONFIGURACIÓN - PERSONALIZÁ AQUÍ
+        const CONFIG = {
+            // 📱 IMPORTANTE: Reemplazá con tu número de WhatsApp (código de país + número sin espacios ni guiones)
+            // Ejemplo: Argentina (549) + área (11) + número (12345678) = 5491112345678
+            numeroWhatsApp: '5491123456789',
+            
+            // ☎️ Teléfono para llamadas directas (opcional - con espacios se ve mejor)
+            telefonoLlamada: '11 5555-4321',
+            
+            // 🏪 Nombre de tu local
+            nombreLocal: '🔥 LA MILANESA',
+            
+            // 🕒 Horarios de atención (formato 24hs)
+            horarios: {
+                lunes: { abierto: true, horarios: '11:00-15:00 y 19:00-23:00' },
+                martes: { abierto: true, horarios: '11:00-15:00 y 19:00-23:00' },
+                miercoles: { abierto: true, horarios: '11:00-15:00 y 19:00-23:00' },
+                jueves: { abierto: true, horarios: '11:00-15:00 y 19:00-23:00' },
+                viernes: { abierto: true, horarios: '11:00-15:00 y 19:00-00:00' },
+                sabado: { abierto: true, horarios: '11:00-00:00' },
+                domingo: { abierto: false, horarios: 'Cerrado' },
+            },
+            
+            // 📱 Redes sociales (dejá en blanco '' las que no uses)
+            redesSociales: {
+                instagram: 'https://instagram.com/tulocal',  // Ejemplo: https://instagram.com/lamilanesa
+                facebook: 'https://facebook.com/tulocal',     // Ejemplo: https://facebook.com/lamilanesa
+                tiktok: '',                                     // Opcional
+            },
+        };
+
+        // 🍔 MENÚ - Agregá, modificá o eliminá productos según tu carta
+        const MENU = {
+            sandwiches: [
+                { id: 's1', name: 'Milanesa Completa', desc: 'Milanesa, lechuga, tomate, huevo, jamón y queso', price: 3500 },
+                { id: 's2', name: 'Milanesa Simple', desc: 'Milanesa con lechuga y tomate', price: 2800 },
+                { id: 's3', name: 'Milanesa Napolitana', desc: 'Milanesa con salsa, jamón y muzzarella', price: 3800 },
+                { id: 's4', name: 'Milanesa con Fritas', desc: 'Milanesa acompañada de papas fritas', price: 3200 },
+            ],
+            lomitos: [
+                { id: 'l1', name: 'Lomito Completo', desc: 'Lomo, lechuga, tomate, huevo, jamón y queso', price: 4200 },
+                { id: 'l2', name: 'Lomito Simple', desc: 'Lomo con lechuga y tomate', price: 3500 },
+                { id: 'l3', name: 'Lomito Especial', desc: 'Lomo, panceta, cebolla caramelizada, queso azul', price: 4800 },
+            ],
+            empanadas: [
+                { id: 'e1', name: 'Empanada Carne', desc: 'Carne cortada a cuchillo', price: 600 },
+                { id: 'e2', name: 'Empanada J&Q', desc: 'Jamón y queso', price: 600 },
+                { id: 'e3', name: 'Empanada Pollo', desc: 'Pollo con verduras', price: 650 },
+                { id: 'e4', name: 'Empanada Humita', desc: 'Choclo cremoso', price: 650 },
+                { id: 'e5', name: 'Empanada Caprese', desc: 'Tomate, muzzarella y albahaca', price: 650 },
+            ],
+            bebidas: [
+                { id: 'b1', name: 'Coca Cola 500ml', desc: 'Bebida cola', price: 800 },
+                { id: 'b2', name: 'Sprite 500ml', desc: 'Bebida lima-limón', price: 800 },
+                { id: 'b3', name: 'Agua Mineral', desc: '500ml sin gas', price: 600 },
+                { id: 'b4', name: 'Cerveza Quilmes', desc: 'Lata 473ml', price: 1200 },
+                { id: 'b5', name: 'Fernet con Coca', desc: 'Preparado 500ml', price: 1500 },
+            ],
+            postres: [
+                { id: 'p1', name: 'Flan con Crema', desc: 'Casero', price: 1200 },
+                { id: 'p2', name: 'Helado', desc: '1/4 kg sabor a elección', price: 1500 },
+                { id: 'p3', name: 'Brownie', desc: 'Con dulce de leche', price: 1300 },
+            ],
+        };
+
+        const CATEGORIAS = {
+            sandwiches: { nombre: 'Sándwiches de Milanesa', emoji: '🥪' },
+            lomitos: { nombre: 'Lomitos', emoji: '🌮' },
+            empanadas: { nombre: 'Empanadas', emoji: '🥟' },
+            bebidas: { nombre: 'Bebidas', emoji: '🥤' },
+            postres: { nombre: 'Postres', emoji: '🍰' },
+        };
+
+        // Componentes de íconos
+        const IconCarrito = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+        );
+
+        const IconPlus = ({ size = 18 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+        );
+
+        const IconMinus = ({ size = 16 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+        );
+
+        const IconTrash = ({ size = 18 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+        );
+
+        const IconMapPin = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+        );
+
+        const IconPackage = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+            </svg>
+        );
+
+        const IconSend = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+        );
+
+        const IconGPS = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/>
+            </svg>
+        );
+
+        const IconPhone = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+        );
+
+        const IconInstagram = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+        );
+
+        const IconFacebook = ({ size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+        );
+
+        function AppPedidos() {
+            const [carrito, setCarrito] = useState([]);
+            const [categoriaActiva, setCategoriaActiva] = useState('sandwiches');
+            const [mostrarCarrito, setMostrarCarrito] = useState(false);
+            const [delivery, setDelivery] = useState(true);
+            const [datosCliente, setDatosCliente] = useState({
+                nombre: '',
+                telefono: '',
+                direccion: '',
+                notas: '',
+            });
+            const [ubicacion, setUbicacion] = useState(null);
+            const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
+            const [metodoPago, setMetodoPago] = useState('efectivo');
+            const [pagarCon, setPagarCon] = useState('');
+            const [modalProducto, setModalProducto] = useState(null);
+            const [instruccionesEspeciales, setInstruccionesEspeciales] = useState('');
+            const [estaAbierto, setEstaAbierto] = useState(true);
+
+            // Verificar horarios
+            useEffect(() => {
+                const verificarHorario = () => {
+                    const ahora = new Date();
+                    const diaSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'][ahora.getDay()];
+                    const horarioHoy = CONFIG.horarios[diaSemana];
+                    setEstaAbierto(horarioHoy.abierto);
+                };
+                verificarHorario();
+                const interval = setInterval(verificarHorario, 60000); // Verificar cada minuto
+                return () => clearInterval(interval);
+            }, []);
+
+            const agregarAlCarrito = (producto) => {
+                setModalProducto(producto);
+            };
+
+            const confirmarAgregarAlCarrito = () => {
+                const existe = carrito.find(item => item.id === modalProducto.id && item.instrucciones === instruccionesEspeciales);
+                if (existe) {
+                    setCarrito(carrito.map(item =>
+                        (item.id === modalProducto.id && item.instrucciones === instruccionesEspeciales)
+                            ? { ...item, cantidad: item.cantidad + 1 }
+                            : item
+                    ));
+                } else {
+                    setCarrito([...carrito, { ...modalProducto, cantidad: 1, instrucciones: instruccionesEspeciales }]);
+                }
+                setModalProducto(null);
+                setInstruccionesEspeciales('');
+            };
+
+            const modificarCantidad = (id, instrucciones, delta) => {
+                setCarrito(carrito.map(item => {
+                    if (item.id === id && item.instrucciones === instrucciones) {
+                        const nuevaCantidad = item.cantidad + delta;
+                        return nuevaCantidad > 0 ? { ...item, cantidad: nuevaCantidad } : null;
+                    }
+                    return item;
+                }).filter(Boolean));
+            };
+
+            const eliminarDelCarrito = (id, instrucciones) => {
+                setCarrito(carrito.filter(item => !(item.id === id && item.instrucciones === instrucciones)));
+            };
+
+            const calcularTotal = () => {
+                return carrito.reduce((sum, item) => sum + (item.price * item.cantidad), 0);
+            };
+
+            const obtenerUbicacion = () => {
+                if (!navigator.geolocation) {
+                    alert('Tu navegador no soporta geolocalización');
+                    return;
+                }
+
+                setCargandoUbicacion(true);
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        setUbicacion({
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        });
+                        setCargandoUbicacion(false);
+                        alert('✅ Ubicación guardada correctamente');
+                    },
+                    (error) => {
+                        setCargandoUbicacion(false);
+                        alert('No se pudo obtener tu ubicación. Asegurate de dar permisos al navegador.');
+                    }
+                );
+            };
+
+            const generarMensajeWhatsApp = () => {
+                let mensaje = `*NUEVO PEDIDO*\n\n`;
+                mensaje += `👤 *Cliente:* ${datosCliente.nombre}\n`;
+                mensaje += `📱 *Teléfono:* ${datosCliente.telefono}\n`;
+                mensaje += `${delivery ? '🛵 *Delivery*' : '📦 *Retiro en local*'}\n`;
+                if (delivery && datosCliente.direccion) {
+                    mensaje += `📍 *Dirección:* ${datosCliente.direccion}\n`;
+                }
+                if (delivery && ubicacion) {
+                    mensaje += `🗺️ *Ubicación:* https://www.google.com/maps?q=${ubicacion.lat},${ubicacion.lng}\n`;
+                }
+                mensaje += `\n💳 *Forma de pago:* ${metodoPago === 'efectivo' ? 'Efectivo' : metodoPago === 'transferencia' ? 'Transferencia' : 'Débito/Crédito'}\n`;
+                if (metodoPago === 'efectivo' && pagarCon) {
+                    const vuelto = parseInt(pagarCon) - calcularTotal();
+                    mensaje += `💵 *Paga con:* $${parseInt(pagarCon).toLocaleString('es-AR')} (Vuelto: $${vuelto.toLocaleString('es-AR')})\n`;
+                }
+                mensaje += `\n*ITEMS:*\n`;
+                
+                carrito.forEach(item => {
+                    mensaje += `\n• ${item.cantidad}x ${item.name} - $${(item.price * item.cantidad).toLocaleString('es-AR')}\n`;
+                    if (item.desc) mensaje += `  _${item.desc}_\n`;
+                    if (item.instrucciones) mensaje += `  📝 ${item.instrucciones}\n`;
+                });
+                
+                mensaje += `\n💰 *TOTAL: $${calcularTotal().toLocaleString('es-AR')}*`;
+                
+                if (datosCliente.notas) {
+                    mensaje += `\n\n📝 *Notas adicionales:* ${datosCliente.notas}`;
+                }
+                
+                return encodeURIComponent(mensaje);
+            };
+
+            const enviarPedido = () => {
+                if (!datosCliente.nombre || !datosCliente.telefono) {
+                    alert('Por favor completá tu nombre y teléfono');
+                    return;
+                }
+                if (delivery && !datosCliente.direccion) {
+                    alert('Por favor ingresá tu dirección para delivery');
+                    return;
+                }
+                if (carrito.length === 0) {
+                    alert('Tu carrito está vacío');
+                    return;
+                }
+                if (metodoPago === 'efectivo' && pagarCon && parseInt(pagarCon) < calcularTotal()) {
+                    alert('El monto con el que pagás debe ser mayor o igual al total');
+                    return;
+                }
+                
+                const mensaje = generarMensajeWhatsApp();
+                window.open(`https://wa.me/${CONFIG.numeroWhatsApp}?text=${mensaje}`, '_blank');
+            };
+
+            const llamarDirecto = () => {
+                window.location.href = `tel:${CONFIG.telefonoLlamada.replace(/\s/g, '')}`;
+            };
+
+            const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
+                    {/* Banner de horarios */}
+                    {!estaAbierto && (
+                        <div className="bg-red-600 text-white py-2 px-4 text-center font-bold">
+                            🔴 CERRADO - Abrimos: {CONFIG.horarios[['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'][new Date().getDay()]].horarios}
+                        </div>
+                    )}
+                    {estaAbierto && (
+                        <div className="bg-green-600 text-white py-2 px-4 text-center font-bold flex items-center justify-center gap-2">
+                            <span className="w-2 h-2 bg-white rounded-full pulse-animation"></span>
+                            ABIERTO - {CONFIG.horarios[['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'][new Date().getDay()]].horarios}
+                        </div>
+                    )}
+
+                    {/* Header */}
+                    <header className="sticky top-0 z-40 bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-xl">
+                        <div className="max-w-6xl mx-auto px-4 py-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h1 className="text-2xl font-black tracking-tight">{CONFIG.nombreLocal}</h1>
+                                    <p className="text-xs text-orange-100 font-medium">Hacé tu pedido online</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    {/* Botón de llamada */}
+                                    <button
+                                        onClick={llamarDirecto}
+                                        className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-2xl transition-all active:scale-95"
+                                        title="Llamar ahora"
+                                    >
+                                        <IconPhone />
+                                    </button>
+                                    {/* Botón de carrito */}
+                                    <button
+                                        onClick={() => setMostrarCarrito(!mostrarCarrito)}
+                                        className="relative bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-2xl transition-all active:scale-95"
+                                    >
+                                        <IconCarrito />
+                                        {totalItems > 0 && (
+                                            <span className="absolute -top-2 -right-2 bg-yellow-400 text-orange-900 text-xs font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
+                                                {totalItems}
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Categorías */}
+                    <div className="sticky top-[72px] z-30 bg-white/80 backdrop-blur-md border-b border-orange-200 shadow-sm">
+                        <div className="max-w-6xl mx-auto px-4 py-3 overflow-x-auto">
+                            <div className="flex gap-2 min-w-max">
+                                {Object.entries(CATEGORIAS).map(([key, cat]) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setCategoriaActiva(key)}
+                                        className={`px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all ${
+                                            categoriaActiva === key
+                                                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg scale-105'
+                                                : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                                        }`}
+                                    >
+                                        {cat.emoji} {cat.nombre}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Modal de instrucciones especiales */}
+                    {modalProducto && (
+                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setModalProducto(null)}>
+                            <div className="bg-white rounded-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+                                <h3 className="text-xl font-black text-orange-900 mb-2">{modalProducto.name}</h3>
+                                <p className="text-sm text-gray-600 mb-4">{modalProducto.desc}</p>
+                                <p className="text-2xl font-black text-orange-600 mb-4">${modalProducto.price.toLocaleString('es-AR')}</p>
+                                
+                                <label className="block text-sm font-bold text-orange-900 mb-2">
+                                    Instrucciones especiales (opcional):
+                                </label>
+                                <textarea
+                                    value={instruccionesEspeciales}
+                                    onChange={(e) => setInstruccionesEspeciales(e.target.value)}
+                                    placeholder="Ej: Sin cebolla, bien cocido, etc."
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none font-medium resize-none mb-4"
+                                    rows={3}
+                                />
+                                
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setModalProducto(null)}
+                                        className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-300 font-bold text-gray-700 hover:bg-gray-50"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={confirmarAgregarAlCarrito}
+                                        className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 rounded-xl font-bold hover:from-orange-600 hover:to-red-600"
+                                    >
+                                        Agregar al carrito
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Menú Principal */}
+                    <main className="max-w-6xl mx-auto px-4 py-6">
+                        <div className={mostrarCarrito ? 'hidden' : 'block'}>
+                            <h2 className="text-3xl font-black text-orange-900 mb-6 flex items-center gap-3">
+                                {CATEGORIAS[categoriaActiva].emoji}
+                                <span>{CATEGORIAS[categoriaActiva].nombre}</span>
+                            </h2>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {MENU[categoriaActiva].map(producto => (
+                                    <div
+                                        key={producto.id}
+                                        className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group border border-orange-100"
+                                    >
+                                        <div className="p-5">
+                                            <h3 className="font-black text-lg text-orange-900 mb-1 group-hover:text-orange-600 transition-colors">
+                                                {producto.name}
+                                            </h3>
+                                            <p className="text-sm text-gray-600 mb-4 line-clamp-2">{producto.desc}</p>
+                                            
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-2xl font-black text-orange-600">
+                                                    ${producto.price.toLocaleString('es-AR')}
+                                                </span>
+                                                <button
+                                                    onClick={() => agregarAlCarrito(producto)}
+                                                    className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-xl transition-all active:scale-95"
+                                                >
+                                                    <IconPlus />
+                                                    Agregar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Carrito */}
+                        <div className={mostrarCarrito ? 'block' : 'hidden'}>
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-3xl font-black text-orange-900 flex items-center gap-3">
+                                    🛒 Tu Pedido
+                                </h2>
+                                <button
+                                    onClick={() => setMostrarCarrito(false)}
+                                    className="text-orange-600 hover:text-orange-800 font-bold"
+                                >
+                                    ← Volver al menú
+                                </button>
+                            </div>
+
+                            {carrito.length === 0 ? (
+                                <div className="bg-white rounded-2xl p-12 text-center shadow-lg">
+                                    <IconCarrito size={64} className="mx-auto mb-4 text-orange-300" />
+                                    <p className="text-xl text-gray-600 font-medium">Tu carrito está vacío</p>
+                                    <p className="text-sm text-gray-400 mt-2">Agregá productos del menú</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {/* Items del carrito */}
+                                    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                                        {carrito.map((item, index) => (
+                                            <div key={`${item.id}-${index}`} className="border-b border-orange-100 last:border-0 p-4">
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div className="flex-1">
+                                                        <h3 className="font-bold text-orange-900">{item.name}</h3>
+                                                        <p className="text-xs text-gray-500">{item.desc}</p>
+                                                        {item.instrucciones && (
+                                                            <p className="text-xs text-blue-600 font-medium mt-1">📝 {item.instrucciones}</p>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => eliminarDelCarrito(item.id, item.instrucciones)}
+                                                        className="text-red-500 hover:text-red-700 p-1"
+                                                    >
+                                                        <IconTrash />
+                                                    </button>
+                                                </div>
+                                                
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3 bg-orange-50 rounded-xl p-1">
+                                                        <button
+                                                            onClick={() => modificarCantidad(item.id, item.instrucciones, -1)}
+                                                            className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-orange-600 font-bold hover:bg-orange-100 transition-colors"
+                                                        >
+                                                            <IconMinus />
+                                                        </button>
+                                                        <span className="font-black text-orange-900 w-8 text-center">
+                                                            {item.cantidad}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => modificarCantidad(item.id, item.instrucciones, 1)}
+                                                            className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-orange-600 font-bold hover:bg-orange-100 transition-colors"
+                                                        >
+                                                            <IconPlus size={16} />
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <span className="text-lg font-black text-orange-600">
+                                                        ${(item.price * item.cantidad).toLocaleString('es-AR')}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Tipo de entrega */}
+                                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                                        <h3 className="font-black text-orange-900 mb-4">Forma de entrega</h3>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                onClick={() => setDelivery(true)}
+                                                className={`p-4 rounded-xl border-2 font-bold transition-all ${
+                                                    delivery
+                                                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                                        : 'border-gray-200 text-gray-600 hover:border-orange-300'
+                                                }`}
+                                            >
+                                                <div className="flex justify-center mb-2"><IconMapPin /></div>
+                                                Delivery
+                                            </button>
+                                            <button
+                                                onClick={() => setDelivery(false)}
+                                                className={`p-4 rounded-xl border-2 font-bold transition-all ${
+                                                    !delivery
+                                                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                                        : 'border-gray-200 text-gray-600 hover:border-orange-300'
+                                                }`}
+                                            >
+                                                <div className="flex justify-center mb-2"><IconPackage /></div>
+                                                Retiro
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Datos del cliente */}
+                                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                                        <h3 className="font-black text-orange-900 mb-4">Tus datos</h3>
+                                        <div className="space-y-3">
+                                            <input
+                                                type="text"
+                                                placeholder="Tu nombre *"
+                                                value={datosCliente.nombre}
+                                                onChange={(e) => setDatosCliente({...datosCliente, nombre: e.target.value})}
+                                                className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none font-medium"
+                                            />
+                                            <input
+                                                type="tel"
+                                                placeholder="Tu teléfono *"
+                                                value={datosCliente.telefono}
+                                                onChange={(e) => setDatosCliente({...datosCliente, telefono: e.target.value})}
+                                                className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none font-medium"
+                                            />
+                                            {delivery && (
+                                                <>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Tu dirección *"
+                                                        value={datosCliente.direccion}
+                                                        onChange={(e) => setDatosCliente({...datosCliente, direccion: e.target.value})}
+                                                        className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none font-medium"
+                                                    />
+                                                    <button
+                                                        onClick={obtenerUbicacion}
+                                                        disabled={cargandoUbicacion}
+                                                        className={`w-full px-4 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${
+                                                            ubicacion 
+                                                                ? 'border-green-500 bg-green-50 text-green-700' 
+                                                                : 'border-orange-500 bg-orange-50 text-orange-700 hover:bg-orange-100'
+                                                        } ${cargandoUbicacion ? 'opacity-50 cursor-wait' : ''}`}
+                                                    >
+                                                        <IconGPS />
+                                                        {cargandoUbicacion ? 'Obteniendo ubicación...' : ubicacion ? '✓ Ubicación compartida' : 'Compartir mi ubicación'}
+                                                    </button>
+                                                    {ubicacion && (
+                                                        <p className="text-xs text-green-600 font-medium text-center">
+                                                            Tu ubicación se enviará en el pedido para facilitar la entrega
+                                                        </p>
+                                                    )}
+                                                </>
+                                            )}
+                                            <textarea
+                                                placeholder="Notas adicionales (opcional)"
+                                                value={datosCliente.notas}
+                                                onChange={(e) => setDatosCliente({...datosCliente, notas: e.target.value})}
+                                                className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none font-medium resize-none"
+                                                rows={3}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Método de pago */}
+                                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                                        <h3 className="font-black text-orange-900 mb-4">Método de pago</h3>
+                                        <div className="space-y-3">
+                                            <button
+                                                onClick={() => setMetodoPago('efectivo')}
+                                                className={`w-full p-4 rounded-xl border-2 font-bold text-left transition-all ${
+                                                    metodoPago === 'efectivo'
+                                                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                                        : 'border-gray-200 text-gray-600 hover:border-orange-300'
+                                                }`}
+                                            >
+                                                💵 Efectivo
+                                            </button>
+                                            {metodoPago === 'efectivo' && (
+                                                <input
+                                                    type="number"
+                                                    placeholder="¿Con cuánto pagás? (opcional)"
+                                                    value={pagarCon}
+                                                    onChange={(e) => setPagarCon(e.target.value)}
+                                                    className="w-full px-4 py-3 rounded-xl border-2 border-orange-200 focus:border-orange-500 focus:outline-none font-medium"
+                                                />
+                                            )}
+                                            <button
+                                                onClick={() => setMetodoPago('transferencia')}
+                                                className={`w-full p-4 rounded-xl border-2 font-bold text-left transition-all ${
+                                                    metodoPago === 'transferencia'
+                                                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                                        : 'border-gray-200 text-gray-600 hover:border-orange-300'
+                                                }`}
+                                            >
+                                                🏦 Transferencia
+                                            </button>
+                                            <button
+                                                onClick={() => setMetodoPago('tarjeta')}
+                                                className={`w-full p-4 rounded-xl border-2 font-bold text-left transition-all ${
+                                                    metodoPago === 'tarjeta'
+                                                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                                        : 'border-gray-200 text-gray-600 hover:border-orange-300'
+                                                }`}
+                                            >
+                                                💳 Débito / Crédito
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Total y enviar */}
+                                    <div className="bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl shadow-2xl p-6 text-white">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <span className="text-xl font-bold">TOTAL</span>
+                                            <span className="text-4xl font-black">
+                                                ${calcularTotal().toLocaleString('es-AR')}
+                                            </span>
+                                        </div>
+                                        
+                                        <button
+                                            onClick={enviarPedido}
+                                            className="w-full bg-white text-orange-600 py-4 rounded-xl font-black text-lg flex items-center justify-center gap-3 hover:bg-orange-50 transition-all shadow-lg"
+                                        >
+                                            <IconSend />
+                                            ENVIAR PEDIDO POR WHATSAPP
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    {/* Footer con redes sociales */}
+                    <footer className="mt-12 py-8 bg-white border-t border-orange-200">
+                        <div className="max-w-6xl mx-auto px-4 text-center">
+                            <p className="font-bold text-orange-900 mb-4">{CONFIG.nombreLocal}</p>
+                            
+                            {/* Redes sociales */}
+                            <div className="flex justify-center gap-4 mb-4">
+                                {CONFIG.redesSociales.instagram && (
+                                    <a 
+                                        href={CONFIG.redesSociales.instagram}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                                    >
+                                        <IconInstagram />
+                                    </a>
+                                )}
+                                {CONFIG.redesSociales.facebook && (
+                                    <a 
+                                        href={CONFIG.redesSociales.facebook}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                                    >
+                                        <IconFacebook />
+                                    </a>
+                                )}
+                            </div>
+                            
+                            {/* Horarios */}
+                            <div className="text-sm text-gray-600">
+                                <p className="font-bold mb-2">Horarios de atención:</p>
+                                {Object.entries(CONFIG.horarios).map(([dia, info]) => (
+                                    <p key={dia} className="text-xs">
+                                        <span className="capitalize font-medium">{dia}</span>: {info.horarios}
+                                    </p>
+                                ))}
+                            </div>
+                            
+                            <p className="text-xs text-gray-400 mt-4">Pedidos Online</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AppPedidos />);
+    </script>
+</body>
+</html>
+                                </button>
                                                         <span className="font-black text-orange-900 w-8 text-center">
                                                             {item.cantidad}
                                                         </span>
