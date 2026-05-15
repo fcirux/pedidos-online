@@ -673,6 +673,387 @@ function abrirCategoria(id) {
     renderProductos(id);
     document.getElementById('vistaCategorias').classList.remove('activa');
     document.getElementById('vistaProductos').classList.add('activa');
+    history.pushState({ vista: 'productos' }, '');
+    window.scrollTo(0,0);
+}
+
+function volverCategorias() {
+    document.getElementById('vistaProductos').classList.remove('activa');
+    document.getElementById('vistaCategorias').classList.add('activa');
+    window.scrollTo(0,0);
+}
+
+// ═══════════════════════════════════════════
+// PRODUCTOS
+// ═══════════════════════════════════════════
+function renderProductos(catId) {
+    const prods = MENU[catId] || [];
+    document.getElementById('productosLista').innerHTML = prods.map(p => {
+        const cant   = E.cantidades[p.id] || 1;
+        const imgPart = p.img
+            ? `<img src="${CONFIG.baseUrl}${p.img}" class="producto-card-img" alt="${p.nombre}" onerror="this.style.display='none'">`
+            : '';
+        return `
+        <div class="producto-card">
+            ${imgPart}
+            <div class="producto-card-body">
+                <div class="producto-nombre">${p.nombre}</div>
+                <div class="producto-descripcion">${p.desc}</div>
+                <div class="producto-precio">${fmt(p.precio)}</div>
+                <div class="producto-footer">
+                    <div class="cantidad-selector">
+                        <button class="btn-cantidad" onclick="cambiarCant('${p.id}',-1)">−</button>
+                        <span class="cantidad-num" id="cn-${p.id}">${cant}</span>
+                        <button class="btn-cantidad" onclick="cambiarCant('${p.id}',1)">+</button>
+                    </div>
+                    <button class="btn-agregar" id="ba-${p.id}" onclick="abrirModal('${p.id}')">
+                        Agregar (${cant})
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function cambiarCant(id, d) {
+    E.cantidades[id] = Math.max(1, (E.cantidades[id] || 1) + d);
+    const n = E.cantidades[id];
+    const el = document.getElementById(`cn-${id}`);
+    if (el) el.textContent = n;
+    const ba = document.getElementById(`ba-${id}`);
+    if (ba) ba.textContent = `Agregar (${n})`;
+}
+
+// ═══════════════════════════════════════════
+// MODAL INSTRUCCIONES
+// ═══════════════════════════════════════════
+function abrirModal(prodId) {
+    const catId = E.categoriaActiva;
+    const prod  = (MENU[catId]||[]).find(p => p.id === prodId);
+    if (!prod) return;
+    E.modalProd = prod;
+    E.modalCant = E.cantidades[prod.id] || 1;
+    document.getElementById('modalProductoNombre').textContent = prod.nombre;
+    document.getElementById('modalInput').value = '';
+    document.getElementById('modalInstrucciones').classList.add('activo');
+    history.pushState({ vista: 'modal' }, '');
+}
+
+function confirmarAgregar(instrucciones) {
+    const prod = E.modalProd;
+    if (!prod) return;
+    instrucciones = instrucciones.trim();
+
+    const ya = E.carrito.find(i => i.id === prod.id && i.instrucciones === instrucciones);
+    if (ya) {
+        ya.cantidad += E.modalCant;
+    } else {
+        E.carrito.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, cantidad: E.modalCant, instrucciones });
+    }
+
+    // reset cantidad del producto
+    E.cantidades[prod.id] = 1;
+    const el = document.getElementById(`cn-${prod.id}`);
+    if (el) el.textContent = 1;
+    const ba = document.getElementById(`ba-${prod.id}`);
+    if (ba) ba.textContent = `Agregar (1)`;
+
+    document.getElementById('modalInstrucciones').classList.remove('activo');
+    E.modalProd = null;
+    actualizarBadge();
+
+    // animación carrito
+    const btn = document.getElementById('btnCart');
+    btn.style.transform = 'scale(1.35)';
+    setTimeout(() => btn.style.transform = '', 250);
+}
+
+// ═══════════════════════════════════════════
+// CARRITO
+// ═══════════════════════════════════════════
+function toggleCarrito() {
+    E.mostrarCarrito = !E.mostrarCarrito;
+    document.getElementById('carritoOverlay').classList.toggle('activo', E.mostrarCarrito);
+    document.getElementById('carritoPanel').style.display = E.mostrarCarrito ? 'block' : 'none';
+    if (E.mostrarCarrito) {
+        renderCarrito();
+        history.pushState({ vista: 'carrito' }, '');
+    }
+}
+function cerrarCarrito() {
+    E.mostrarCarrito = false;
+    document.getElementById('carritoOverlay').classList.remove('activo');
+    document.getElementById('carritoPanel').style.display = 'none';
+}
+
+function actualizarBadge() {
+    const total = E.carrito.reduce((s,i) => s + i.cantidad, 0);
+    const badge = document.getElementById('cartBadge');
+    badge.style.display = total > 0 ? 'flex' : 'none';
+    badge.textContent = total;
+}
+
+function renderCarrito() {
+    const cont = document.getElementById('carritoContenido');
+
+    if (E.carrito.length === 0) {
+        cont.innerHTML = `
+        <div class="carrito-vacio">
+            <div class="carrito-vacio-icon">🛒</div>
+            <div style="font-size:17px;font-weight:700">Tu carrito está vacío</div>
+            <div style="font-size:13px;margin-top:6px;color:var(--text-secondary)">Explorá el menú y agregá lo que quieras</div>
+        </div>`;
+        return;
+    }
+
+    const total = E.carrito.reduce((s,i) => s + i.precio * i.cantidad, 0);
+
+    const itemsHtml = E.carrito.map((item, idx) => `
+        <div class="carrito-item">
+            <div class="carrito-item-info">
+                <div class="carrito-item-nombre">${item.nombre}</div>
+                ${item.instrucciones ? `<div class="carrito-item-instrucciones">📝 ${item.instrucciones}</div>` : ''}
+                <div class="carrito-item-precio">${fmt(item.precio * item.cantidad)}</div>
+            </div>
+            <div class="carrito-item-controles">
+                <button class="btn-ci" onclick="cambiarItemCarrito(${idx},-1)">−</button>
+                <span class="carrito-item-cantidad">${item.cantidad}</span>
+                <button class="btn-ci" onclick="cambiarItemCarrito(${idx},1)">+</button>
+                <button class="btn-eliminar" onclick="eliminarItem(${idx})">🗑</button>
+            </div>
+        </div>`).join('');
+
+    const vueltoHtml = (E.pago === 'efectivo' && E.pagarCon && Number(E.pagarCon) > total)
+        ? `<div class="vuelto-info">Tu vuelto: <span class="vuelto-monto">${fmt(Number(E.pagarCon) - total)}</span></div>`
+        : '';
+
+    cont.innerHTML = `
+        ${itemsHtml}
+
+        <div class="carrito-total">
+            <span class="carrito-total-label">TOTAL</span>
+            <span class="carrito-total-valor">${fmt(total)}</span>
+        </div>
+
+        <!-- TIPO DE ENTREGA -->
+        <div class="form-section">
+            <div class="form-section-title">¿Cómo recibís tu pedido?</div>
+            <div class="opciones-row">
+                <button class="opcion-btn ${E.delivery==='delivery'?'activo':''}" onclick="setDelivery('delivery')">🛵 Delivery</button>
+                <button class="opcion-btn ${E.delivery==='retiro'?'activo':''}" onclick="setDelivery('retiro')">🏪 Retiro</button>
+            </div>
+        </div>
+
+        <!-- DATOS DEL CLIENTE -->
+        <div class="form-section">
+            <div class="form-section-title">Tus datos</div>
+            <input class="form-input" placeholder="Tu nombre *" value="${E.cliente.nombre}" oninput="E.cliente.nombre=this.value">
+            <input class="form-input" placeholder="Tu teléfono" type="tel" value="${E.cliente.telefono}" oninput="E.cliente.telefono=this.value">
+            ${E.delivery==='delivery' ? `
+                <input class="form-input" placeholder="Dirección de entrega *" value="${E.cliente.direccion}" oninput="E.cliente.direccion=this.value">
+                <button class="btn-ubicacion ${E.ubicacion?'compartida':''}" onclick="compartirUbicacion()">
+                    ${E.ubicacion ? '✅ Ubicación compartida' : '📍 Compartir mi ubicación (GPS)'}
+                </button>` : ''}
+            <textarea class="form-input" placeholder="Notas adicionales (opcional)" style="height:60px;resize:none" oninput="E.cliente.notas=this.value">${E.cliente.notas}</textarea>
+        </div>
+
+        <!-- MÉTODO DE PAGO -->
+        <div class="form-section">
+            <div class="form-section-title">Método de pago</div>
+            <div class="pago-opciones">
+                <div class="pago-opcion ${E.pago==='efectivo'?'activo':''}" onclick="setPago('efectivo')">
+                    <span class="pago-opcion-icon">💵</span>
+                    <div><div class="pago-opcion-nombre">Efectivo</div><div class="pago-opcion-desc">Pagás al recibir o retirar</div></div>
+                </div>
+                <div class="pago-opcion ${E.pago==='transferencia'?'activo':''}" onclick="setPago('transferencia')">
+                    <span class="pago-opcion-icon">🏦</span>
+                    <div><div class="pago-opcion-nombre">Transferencia</div><div class="pago-opcion-desc">Por CBU / Alias</div></div>
+                </div>
+                <div class="pago-opcion ${E.pago==='debito'?'activo':''}" onclick="setPago('debito')">
+                    <span class="pago-opcion-icon">💳</span>
+                    <div><div class="pago-opcion-nombre">Débito / Crédito</div><div class="pago-opcion-desc">Con lector en el local</div></div>
+                </div>
+            </div>
+            ${E.pago==='efectivo' ? `
+                <input class="form-input" id="inputPagarCon" type="number" placeholder="¿Con cuánto pagás? (opcional)" value="${E.pagarCon}"
+                    style="margin-top:10px" oninput="actualizarVuelto(this.value)">
+                <div id="vueltoContainer">${vueltoHtml}</div>` : ''}
+        </div>
+
+        <button class="btn-confirmar" onclick="enviarWhatsApp()">
+            📲 Enviar pedido por WhatsApp
+        </button>
+        <div style="height:16px"></div>
+    `;
+}
+
+function cambiarItemCarrito(idx, d) {
+    E.carrito[idx].cantidad += d;
+    if (E.carrito[idx].cantidad <= 0) E.carrito.splice(idx, 1);
+    actualizarBadge();
+    renderCarrito();
+}
+
+function eliminarItem(idx) {
+    E.carrito.splice(idx, 1);
+    actualizarBadge();
+    renderCarrito();
+}
+
+function setDelivery(tipo) { E.delivery = tipo; renderCarrito(); }
+function setPago(tipo)     { E.pago    = tipo; renderCarrito(); }
+
+// ═══════════════════════════════════════════
+// GEOLOCALIZACIÓN
+// ═══════════════════════════════════════════
+function compartirUbicacion() {
+    if (!navigator.geolocation) { alert('Tu navegador no soporta geolocalización'); return; }
+    navigator.geolocation.getCurrentPosition(
+        pos => { E.ubicacion = { lat: pos.coords.latitude, lng: pos.coords.longitude }; renderCarrito(); },
+        ()  => { alert('No se pudo obtener la ubicación. Ingresá la dirección manualmente.'); }
+    );
+}
+
+// ═══════════════════════════════════════════
+// ENVÍO POR WHATSAPP
+// ═══════════════════════════════════════════
+function enviarWhatsApp() {
+    if (!E.carrito.length)         return alert('El carrito está vacío');
+    if (!E.delivery)               return alert('Elegí Delivery o Retiro');
+    if (!E.cliente.nombre.trim())  return alert('Ingresá tu nombre');
+    if (!E.pago)                   return alert('Elegí un método de pago');
+    if (E.delivery === 'delivery' && !E.cliente.direccion.trim() && !E.ubicacion)
+        return alert('Ingresá tu dirección de entrega');
+
+    const total = E.carrito.reduce((s,i) => s + i.precio * i.cantidad, 0);
+
+    const pagoNombre = { efectivo:'Efectivo 💵', transferencia:'Transferencia 🏦', debito:'Débito/Crédito 💳' };
+
+    let m = '';
+    m += `🔥 *PEDIDO — LA MILANESA*\n`;
+    m += `━━━━━━━━━━━━━━━━━━\n`;
+    m += `👤 *Cliente:* ${E.cliente.nombre}\n`;
+    if (E.cliente.telefono) m += `📞 *Teléfono:* ${E.cliente.telefono}\n`;
+    m += `\n`;
+    m += `🚚 *Entrega:* ${E.delivery === 'delivery' ? 'Delivery 🛵' : 'Retiro en local 🏪'}\n`;
+    if (E.delivery === 'delivery') {
+        if (E.cliente.direccion) m += `📍 *Dirección:* ${E.cliente.direccion}\n`;
+        if (E.ubicacion) m += `🗺️ *GPS:* https://www.google.com/maps?q=${E.ubicacion.lat},${E.ubicacion.lng}\n`;
+    }
+    m += `\n`;
+    m += `🛒 *Productos:*\n`;
+    E.carrito.forEach(item => {
+        m += `  • ${item.cantidad}x ${item.nombre} — ${fmt(item.precio * item.cantidad)}\n`;
+        if (item.instrucciones) m += `    📝 _${item.instrucciones}_\n`;
+    });
+    m += `\n`;
+    m += `💰 *TOTAL: ${fmt(total)}*\n\n`;
+    m += `💳 *Pago:* ${pagoNombre[E.pago]}\n`;
+    if (E.pago === 'efectivo' && E.pagarCon) {
+        m += `   Paga con: ${fmt(Number(E.pagarCon))}\n`;
+        if (Number(E.pagarCon) > total) m += `   Vuelto: ${fmt(Number(E.pagarCon) - total)}\n`;
+    }
+    if (E.cliente.notas.trim()) m += `\n📋 *Notas:* ${E.cliente.notas.trim()}\n`;
+    m += `━━━━━━━━━━━━━━━━━━`;
+
+    window.open(`https://wa.me/${CONFIG.numeroWhatsApp}?text=${encodeURIComponent(m)}`, '_blank');
+}
+
+// ═══════════════════════════════════════════
+// FOOTER
+// ═══════════════════════════════════════════
+function renderFooter() {
+    const nombres = {
+        lunes:'Lunes', martes:'Martes', miercoles:'Miércoles',
+        jueves:'Jueves', viernes:'Viernes', sabado:'Sábado', domingo:'Domingo'
+    };
+    document.getElementById('footerHorarios').innerHTML =
+        Object.entries(CONFIG.horarios).map(([d,c]) =>
+            `<div class="footer-horario-dia"><strong>${nombres[d]}:</strong> ${c.texto}</div>`
+        ).join('');
+
+    document.getElementById('footerRedes').innerHTML = `
+        <a href="${CONFIG.redes.instagram}" target="_blank" class="footer-red-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+            Instagram
+        </a>
+        <a href="${CONFIG.redes.facebook}" target="_blank" class="footer-red-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            Facebook
+        </a>`;
+}
+
+// ═══════════════════════════════════════════
+// VUELTO (sin re-renderizar el carrito)
+// ═══════════════════════════════════════════
+function actualizarVuelto(valor) {
+    E.pagarCon = valor;
+    const total = E.carrito.reduce((s,i) => s + i.precio * i.cantidad, 0);
+    const cont  = document.getElementById('vueltoContainer');
+    if (!cont) return;
+    const num = Number(valor);
+    if (valor && num > total) {
+        cont.innerHTML = `<div class="vuelto-info">Tu vuelto: <span class="vuelto-monto">${fmt(num - total)}</span></div>`;
+    } else {
+        cont.innerHTML = '';
+    }
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function fmt(n) {
+    return '$' + n.toLocaleString('es-AR');
+}
+
+// ═══════════════════════════════════════════
+// BOTÓN ATRÁS DE ANDROID
+// ═══════════════════════════════════════════
+window.addEventListener('popstate', function(e) {
+    const vista = e.state?.vista;
+
+    // Cerrar modal si está abierto
+    const modal = document.getElementById('modalInstrucciones');
+    if (modal.classList.contains('activo')) {
+        modal.classList.remove('activo');
+        E.modalProd = null;
+        return;
+    }
+
+    // Cerrar carrito si está abierto
+    if (E.mostrarCarrito) {
+        cerrarCarrito();
+        return;
+    }
+
+    // Volver de productos a categorías
+    const vistaProds = document.getElementById('vistaProductos');
+    if (vistaProds.classList.contains('activa')) {
+        vistaProds.classList.remove('activa');
+        document.getElementById('vistaCategorias').classList.add('activa');
+        window.scrollTo(0,0);
+        return;
+    }
+});
+
+// ARRANCAR
+init();
+</script>
+</body>
+</html>
+
+
+function abrirCategoria(id) {
+    E.categoriaActiva = id;
+    const cat = CATEGORIAS.find(c => c.id === id);
+    document.getElementById('productosTitulo').textContent = cat.nombre;
+    renderProductos(id);
+    document.getElementById('vistaCategorias').classList.remove('activa');
+    document.getElementById('vistaProductos').classList.add('activa');
     window.scrollTo(0,0);
 }
 
