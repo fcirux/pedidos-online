@@ -865,9 +865,9 @@ function renderCarrito() {
                 </div>
             </div>
             ${E.pago==='efectivo' ? `
-                <input class="form-input" type="number" placeholder="¿Con cuánto pagás? (opcional)" value="${E.pagarCon}"
-                    style="margin-top:10px" oninput="E.pagarCon=this.value;renderCarrito()">
-                ${vueltoHtml}` : ''}
+                <input class="form-input" id="inputPagarCon" type="number" placeholder="¿Con cuánto pagás? (opcional)" value="${E.pagarCon}"
+                    style="margin-top:10px" oninput="actualizarVuelto(this.value)">
+                <div id="vueltoContainer">${vueltoHtml}</div>` : ''}
         </div>
 
         <button class="btn-confirmar" onclick="enviarWhatsApp()">
@@ -975,6 +975,22 @@ function renderFooter() {
             </svg>
             Facebook
         </a>`;
+}
+
+// ═══════════════════════════════════════════
+// VUELTO (sin re-renderizar el carrito)
+// ═══════════════════════════════════════════
+function actualizarVuelto(valor) {
+    E.pagarCon = valor;
+    const total = E.carrito.reduce((s,i) => s + i.precio * i.cantidad, 0);
+    const cont  = document.getElementById('vueltoContainer');
+    if (!cont) return;
+    const num = Number(valor);
+    if (valor && num > total) {
+        cont.innerHTML = `<div class="vuelto-info">Tu vuelto: <span class="vuelto-monto">${fmt(num - total)}</span></div>`;
+    } else {
+        cont.innerHTML = '';
+    }
 }
 
 // ═══════════════════════════════════════════
